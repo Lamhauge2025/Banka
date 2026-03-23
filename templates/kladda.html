@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Flytingar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f8f8;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .messages {
+            color: red;
+        }
+
+        small {
+            display: block;
+            color: #666;
+            font-size: 0.85em;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Flytingar (Kladda)</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur</a>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    {% if transfers %}
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Frá Konto (Eigari)</th>
+            <th>Til Konto (Eigari)</th>
+            <th>Mottakara Tekst</th>
+            <th>Egin Tekst</th>
+            <th>Dato</th>
+            <th>Upphædd</th>
+            {% if is_admin %}
+            <th>Saldo Frá (Nú)</th>
+            <th>Saldo Til (Nú)</th>
+            {% else %}
+            <th>Saldo (Nú)</th>
+            {% endif %}
+        </tr>
+        {% for transfer in transfers %}
+        <tr>
+            <td>{{ transfer[0] }}</td>
+            <td>{{ transfer[1] }}<br><small>{{ transfer[9] }}</small></td>
+            <td>{{ transfer[2] }}<br><small>{{ transfer[10] }}</small></td>
+            <td>{{ transfer[3] }}</td>
+            <td>{{ transfer[4] }}</td>
+            <td>{{ transfer[5].strftime('%Y-%m-%d') if transfer[5] else '-' }}</td>
+            <td>{{ transfer[6] }}</td>
+            {% if is_admin %}
+            <td>{{ transfer[7] }}</td>
+            <td>{{ transfer[8] }}</td>
+            {% else %}
+            <td>
+                {% if transfer[1] in user_kontonr %}
+                {{ transfer[7] }}
+                {% else %}
+                {{ transfer[8] }}
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>Engar flytingar funnir</p>
+    {% endif %}
+</body>
+
+</html>

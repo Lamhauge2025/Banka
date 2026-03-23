@@ -32,7 +32,7 @@
         }
 
         table {
-            margin: 20px auto;
+            margin: 20px 0;
             border-collapse: collapse;
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -51,19 +51,38 @@
         .messages {
             color: red;
         }
+
+        .table-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 2px;
+        }
+
+        .refresh-side {
+            background: transparent;
+            padding: 0;
+            margin: 20px 0 0 0;
+        }
+
+        .refresh-side:hover {
+            background: transparent;
+        }
     </style>
 </head>
 
 <body>
-    <h1>{% if is_admin %}Admin Yvirlit{% else %}Familju Kontur{% endif %}</h1>
+    <h1>{% if is_admin %}Admin Yvirlit{% else %}Kontur{% endif %}</h1>
     <a href="{{ url_for('logout') }}">Útrita</a>
     <a href="{{ url_for('add_transaction') }}">Tak út/Set Inn</a>
     {% if is_admin %}
     <a href="{{ url_for('add_account') }}">Legg afturat konto</a>
     <a href="{{ url_for('add_person') }}">Legg afturat persón</a>
-    <a href="{{ url_for('dashboard') }}">Endurnýggja</a>
+    <a href="{{ url_for('kundar') }}">Kundar</a>
     {% endif %}
     <a href="{{ url_for('add_transfer') }}">Flyt Pengar</a>
+    <a href="{{ url_for('bokingar') }}">Bokingar</a>
+    <a href="{{ url_for('kladda') }}">Flytingar</a>
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     <ul class="messages">
@@ -73,22 +92,28 @@
     </ul>
     {% endif %}
     {% endwith %}
-    <table>
-        <tr>
-            <th>Kontonummur</th>
-            <th>Slag</th>
-            <th>Støða</th>
-            <th>Eigari</th>
-        </tr>
-        {% for account in accounts %}
-        <tr>
-            <td>{{ account[0] }}</td>
-            <td>{{ account[1] }}</td>
-            <td>{{ account[2] }}</td>
-            <td>{{ account[3] }} {{ account[4] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="table-row">
+        <table>
+            <tr>
+                <th>Kontonummur</th>
+                <th>Slag</th>
+                <th>Saldo</th>
+                <th>Eigari</th>
+            </tr>
+            {% for account in accounts %}
+            <tr>
+                <td>{{ account[0] }}</td>
+                <td>{{ account[1] }}</td>
+                <td>{{ account[2] }}</td>
+                <td>{{ account[3] }} {{ account[4] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% if is_admin %}
+        <a class="refresh-side" href="{{ url_for('dashboard') }}"><img
+                src="https://www.freeiconspng.com/uploads/refresh-icon-png-2.png" width="30"></a>
+        {% endif %}
+    </div>
 </body>
 
 </html>

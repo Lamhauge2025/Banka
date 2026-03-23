@@ -66,6 +66,7 @@ def dashboard():
             FROM konto k
             JOIN kundi ku ON k.kundi_id = ku.kundi_id
             JOIN personur p ON ku.ptal = p.ptal
+            order by p.fornavn asc
         """)
         accounts = cursor.fetchall()
     else:
@@ -258,6 +259,7 @@ def add_transfer():
 
         if saldo_fra[0] < upphaedd:
             flash('Ikki nóg pengar')
+            cursor.close()
             conn.close()
             return redirect(url_for('add_transfer'))
 
@@ -335,29 +337,37 @@ def add_person():
         try:
             fodidato = datetime.strptime(fodidato_str, '%Y-%m-%d').date()
         except ValueError:
-            flash('Ógyldigur føðidagur')
+            flash('Ogyldigur fodidagur')
             return redirect(url_for('add_person'))
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Generate ptal
         ptal = cursor.callfunc('ptal_gen', str, [fodidato])
 
-        # Insert into personur
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO personur (ptal, postkoda, fornavn, eftirnavn, adressa, fodidato, kyn)
             VALUES (:ptal, :postkoda, :fornavn, :eftirnavn, :adressa, :fodidato, :kyn)
-        """, {'ptal': ptal, 'postkoda': postkoda, 'fornavn': fornavn, 'eftirnavn': eftirnavn, 'adressa': adressa, 'fodidato': fodidato, 'kyn': kyn})
+            """,
+            {
+                'ptal': ptal,
+                'postkoda': postkoda,
+                'fornavn': fornavn,
+                'eftirnavn': eftirnavn,
+                'adressa': adressa,
+                'fodidato': fodidato,
+                'kyn': kyn,
+            },
+        )
 
         conn.commit()
         cursor.close()
         conn.close()
 
-        flash(f'Persónur lagt afturat við P-tal: {ptal}')
+        flash(f'Personur lagdur afturat vid P-tal: {ptal}')
         return redirect(url_for('dashboard'))
 
-    # Get postkoda list
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT postkoda, byur FROM postkoda ORDER BY postkoda")
@@ -368,11 +378,155 @@ def add_person():
     return render_template('add_person.html', postkodas=postkodas)
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/kundar')
+def kundar():
+    if 'ptal' not in session or session['ptal'] != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT p.ptal, p.fornavn, p.eftirnavn, p.adressa, p.fodidato, p.kyn, p.postkoda, pk.byur, k.kundi_id
+        FROM personur p
+        LEFT JOIN postkoda pk ON pk.postkoda = p.postkoda
+        LEFT JOIN kundi k ON k.ptal = p.ptal
+        ORDER BY k.kundi_id
+        """
+    )
+    all_kundar = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return render_template('kundar.html', all_kundar=all_kundar)
+
+
+@app.route('/bokingar')
+def bokingar():
+    if 'ptal' not in session:
+        return redirect(url_for('login'))
+
+    ptal = session['ptal']
+    is_admin = (ptal == 'admin')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if is_admin:
+        # Admin sees all transactions
+        cursor.execute("""
+            SELECT b.bokingar_id, b.kontonr, b.bokingar_tekst, b.dato, b.upphaedd, b.bokingar_slag, b.leypandi_saldo
+            FROM boking b
+            ORDER BY b.dato DESC
+        """)
+        transactions = cursor.fetchall()
+    else:
+        # Regular user: transactions for their own accounts
+        # Get all kontonr for this user's kundi
+        cursor.execute("""
+            SELECT k.kontonr
+            FROM konto k
+            JOIN kundi ku ON k.kundi_id = ku.kundi_id
+            WHERE ku.ptal = :ptal
+        """, {'ptal': ptal})
+        user_kontonr = [row[0] for row in cursor.fetchall()]
+
+        transactions = []
+        if user_kontonr:
+            # Get transactions for all user's accounts
+            placeholders = ','.join([':' + str(i)
+                                    for i in range(len(user_kontonr))])
+            params = {str(i): k for i, k in enumerate(user_kontonr)}
+            cursor.execute(f"""
+                SELECT b.bokingar_id, b.kontonr, b.bokingar_tekst, b.dato, b.upphaedd, b.bokingar_slag, b.leypandi_saldo
+                FROM boking b
+                WHERE b.kontonr IN ({placeholders})
+                ORDER BY b.dato DESC
+            """, params)
+            transactions = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('bokingar.html', transactions=transactions, is_admin=is_admin)
+
+
+@app.route('/kladda')
+def kladda():
+    if 'ptal' not in session:
+        return redirect(url_for('login'))
+
+    ptal = session['ptal']
+    is_admin = (ptal == 'admin')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    user_kontonr = []
+    if not is_admin:
+        # Get all kontonr for this user's kundi
+        cursor.execute("""
+            SELECT k.kontonr
+            FROM konto k
+            JOIN kundi ku ON k.kundi_id = ku.kundi_id
+            WHERE ku.ptal = :ptal
+        """, {'ptal': ptal})
+        user_kontonr = [row[0] for row in cursor.fetchall()]
+
+    if is_admin:
+        # Admin sees all transfers with historical saldos and owner names
+        cursor.execute("""
+            SELECT k.kladda_id, k.kontonr_fra, k.kontonr_til, k.mottakara_tekst, k.egin_tekst, k.dato, k.upphaedd,
+                   k.saldo_fra, k.saldo_til,
+                   pf.fornavn || ' ' || pf.eftirnavn AS eigari_fra,
+                   pt.fornavn || ' ' || pt.eftirnavn AS eigari_til
+            FROM kladda k
+            JOIN konto kf ON k.kontonr_fra = kf.kontonr
+            JOIN konto kt ON k.kontonr_til = kt.kontonr
+            JOIN kundi kuf ON kf.kundi_id = kuf.kundi_id
+            JOIN kundi kut ON kt.kundi_id = kut.kundi_id
+            JOIN personur pf ON kuf.ptal = pf.ptal
+            JOIN personur pt ON kut.ptal = pt.ptal
+            ORDER BY k.dato DESC
+        """)
+        transfers = cursor.fetchall()
+    else:
+        # Regular user: transfers involving their own accounts - show historical saldos
+        transfers = []
+        if user_kontonr:
+            # Get transfers from or to user's accounts with historical saldos
+            placeholders = ','.join([':' + str(i)
+                                    for i in range(len(user_kontonr))])
+            params = {str(i): k for i, k in enumerate(user_kontonr)}
+            cursor.execute(f"""
+                SELECT k.kladda_id, k.kontonr_fra, k.kontonr_til, k.mottakara_tekst, k.egin_tekst, k.dato, k.upphaedd,
+                       k.saldo_fra, k.saldo_til,
+                       pf.fornavn || ' ' || pf.eftirnavn AS eigari_fra,
+                       pt.fornavn || ' ' || pt.eftirnavn AS eigari_til
+                FROM kladda k
+                JOIN konto kf ON k.kontonr_fra = kf.kontonr
+                JOIN konto kt ON k.kontonr_til = kt.kontonr
+                JOIN kundi kuf ON kf.kundi_id = kuf.kundi_id
+                JOIN kundi kut ON kt.kundi_id = kut.kundi_id
+                JOIN personur pf ON kuf.ptal = pf.ptal
+                JOIN personur pt ON kut.ptal = pt.ptal
+                WHERE k.kontonr_fra IN ({placeholders})
+                   OR k.kontonr_til IN ({placeholders})
+                ORDER BY k.dato DESC
+            """, params)
+            transfers = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('kladda.html', transfers=transfers, is_admin=is_admin, user_kontonr=user_kontonr)
 
 
 @app.route('/logout')
 def logout():
-    session.clear()  # removes user session
+    session.clear()
     return redirect(url_for('login'))
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fo">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kundar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Kundar</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+    <table>
+        <tr>
+            <th>Kundi ID</th>
+            <th>P-tal</th>
+            <th>Fornavn</th>
+            <th>Eftirnavn</th>
+            <th>Adressa</th>
+            <th>Føðidato</th>
+            <th>Kyn</th>
+            <th>Postkoda</th>
+            <th>Býur</th>
+        </tr>
+        {% for person in all_kundar %}
+        <tr>
+            <td>{{ person[8] if person[8] is not none else '-' }}</td>
+            <td>{{ person[0] }}</td>
+            <td>{{ person[1] }}</td>
+            <td>{{ person[2] }}</td>
+            <td>{{ person[3] }}</td>
+            <td>{{ person[4].strftime('%Y-%m-%d') if person[4] else '-' }}</td>
+            <td>{{ person[5] }}</td>
+            <td>{{ person[6] }}</td>
+            <td>{{ person[7] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
