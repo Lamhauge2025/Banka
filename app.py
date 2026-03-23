@@ -370,3 +370,9 @@ def add_person():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()  # removes user session
+    return redirect(url_for('login'))
