@@ -366,3 +366,7 @@ def add_person():
     conn.close()
 
     return render_template('add_person.html', postkodas=postkodas)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
