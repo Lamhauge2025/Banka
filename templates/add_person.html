@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Legg afturat persón</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .messages {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Legg afturat persón</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <form method="POST">
+        <label for="fornavn">Fornavn:</label>
+        <input type="text" id="fornavn" name="fornavn" required>
+        <label for="eftirnavn">Eftirnavn:</label>
+        <input type="text" id="eftirnavn" name="eftirnavn" required>
+        <label for="fodidato">Føðidagur (YYYY-MM-DD):</label>
+        <input type="date" id="fodidato" name="fodidato" required>
+        <label for="postkoda">Postkoda:</label>
+        <input type="number" id="postkoda" name="postkoda" required>
+        <label for="adressa">Adressa:</label>
+        <input type="text" id="adressa" name="adressa" required>
+        <label for="kyn">Kyn:</label>
+        <select id="kyn" name="kyn" required>
+            <option value="M">Maður</option>
+            <option value="F">Kvinna</option>
+        </select>
+        <button type="submit">Legg afturat</button>
+    </form>
+</body>
+
+</html>

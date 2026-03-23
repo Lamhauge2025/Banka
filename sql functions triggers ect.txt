@@ -1,0 +1,313 @@
+-- =========================
+-- konto_gen function
+-- =========================
+create or replace function konto_gen(lkontoslag varchar2)
+return varchar2
+as
+  next_account number; 
+  tvorsum number;
+  rest number;
+  acc varchar2(20);
+begin
+  loop
+    select kontonr_seq.nextval into next_account from dual;
+    if lkontoslag = 'Kredit' then
+      acc := '986599' || lpad(to_char(next_account), 4, '0');
+    elsif lkontoslag = 'Debit' then
+      acc := '986551' || lpad(to_char(next_account), 4, '0');
+    elsif lkontoslag = 'Trota' then
+      acc := '986553' || lpad(to_char(next_account), 4, '0');
+    end if;
+    tvorsum := 5 * to_number(substr(acc, 1, 1)) +
+               4 * to_number(substr(acc, 2, 1)) +
+               3 * to_number(substr(acc, 3, 1)) +
+               2 * to_number(substr(acc, 4, 1)) +
+               7 * to_number(substr(acc, 5, 1)) +
+               6 * to_number(substr(acc, 6, 1)) +
+               5 * to_number(substr(acc, 7, 1)) +
+               4 * to_number(substr(acc, 8, 1)) +
+               3 * to_number(substr(acc, 9, 1)) +
+               2 * to_number(substr(acc, 10, 1));
+    rest := 11 - mod(tvorsum, 11);
+    exit when rest < 10;
+  end loop;
+  return acc || rest;
+end;
+/
+
+-- =========================
+-- ptal_gen function
+-- =========================
+create or replace function ptal_gen(l_føðidato date)
+return varchar2
+as
+   tvorsum number; 
+   rest number; 
+   next_ptal number; 
+   ptal varchar2(20); 
+   føðidato varchar2(6); 
+begin 
+    føðidato := to_char(l_føðidato,'DDMMYY'); 
+    loop 
+        if extract(year from l_føðidato) < 2000 then
+            select ptal_seq.nextval into next_ptal from dual; 
+        else
+            select ptal_seq2.nextval into next_ptal from dual;
+        end if;
+        ptal := føðidato || lpad(to_char(next_ptal),2,'0'); 
+        tvorsum := 
+            3 * to_number(substr(ptal,1,1)) + 
+            2 * to_number(substr(ptal,2,1)) + 
+            7 * to_number(substr(ptal,3,1)) + 
+            6 * to_number(substr(ptal,4,1)) + 
+            5 * to_number(substr(ptal,5,1)) + 
+            4 * to_number(substr(ptal,6,1)) + 
+            3 * to_number(substr(ptal,7,1)) + 
+            2 * to_number(substr(ptal,8,1));
+        rest := 11 - mod(tvorsum, 11);
+        exit when rest < 10;
+    end loop; 
+    return ptal || rest;
+end;
+/
+
+-- =========================
+-- konto_insert trigger
+-- =========================
+create or replace trigger konto_insert
+before insert on konto
+for each row
+begin
+  if :new.kontonr is null then
+    :new.kontonr := konto_gen(:new.konto_slag);
+  end if;
+end;
+/
+
+-- =========================
+-- kundi_insert trigger
+-- =========================
+create or replace trigger kundi_insert
+before insert on kundi
+for each row
+begin
+  if :new.kundi_id is null then
+    :new.kundi_id := kundi_id_seq.nextval;
+  end if;
+end;
+/
+
+-- =========================
+-- starvsfolk_insert trigger
+-- =========================
+create or replace trigger starvsfolk_insert
+before insert on starvsfolk
+for each row
+begin
+  if :new.starvsfolk_id is null then
+    :new.starvsfolk_id := starvsfolk_id_seq.nextval;
+  end if;
+end;
+/
+
+-- =========================
+-- familju_limir_insert trigger
+-- =========================
+create or replace trigger familju_limir_insert
+before insert on familju_limir
+for each row
+begin
+  if :new.familju_limir_id is null then
+    :new.familju_limir_id := familju_limir_id_seq.nextval;
+  end if;
+end;
+/
+
+-- =========================
+-- kladda_insert trigger
+-- =========================
+create or replace trigger kladda_insert
+before insert on kladda
+for each row
+begin
+  if :new.kladda_id is null then
+    :new.kladda_id := kladda_id_seq.nextval;
+  end if;
+end;
+/
+
+
+-- =========================
+-- hansgjordihetta view
+-- =========================
+create or replace view hansgjordihetta as 
+select konto.*
+from personur p1 inner join familju_limir f1 on p1.ptal = f1.ptal
+     inner join familju_limir f2 on f1.familju_id = f2.familju_id
+     inner join personur p2 on p2.ptal = f2.ptal
+     inner join kundi on kundi.ptal = p2.ptal
+     inner join konto on konto.kundi_id = kundi.kundi_id
+where p1.ptal = '280299014';
+/
+
+
+-- =========================
+-- boking_insert trigger
+-- =========================
+create or replace trigger boking_insert
+before insert on boking
+for each row
+begin
+  if :new.bokingar_id is null then
+    :new.bokingar_id := bokingar_id_seq.nextval;
+  end if;
+  update konto set saldo = :new.upphaedd + saldo where kontonr = :new.kontonr;
+  select saldo into :new.leypandi_saldo from konto where kontonr = :new.kontonr;
+  select sysdate into :new.dato from dual;
+end;
+/
+
+-- =========================
+-- KladdaFlyting Procedure
+-- =========================
+create or replace procedure KladdaFlyting (
+    kontonr_fra   number,
+    kontonr_til     number,
+    flutt_mongd number,
+    mottakara_tekst varchar2,
+    egin_tekst      varchar2
+) is
+    saldo_fra number(12,2);
+    saldo_til number(12,2);
+begin
+    select saldo into saldo_fra from konto where kontonr = kontonr_fra for update;
+    if saldo_fra < flutt_mongd then
+        raise_application_error(-20001, 'Ónøktandi pening');
+    elsif flutt_mongd <= 0 then
+        raise_application_error(-20002, 'Mongd má vera positivt tal');
+    elsif kontonr_fra = kontonr_til then
+        raise_application_error(-20003, 'Kann ikki flyta pening til somu kontu');
+    end if;
+    select saldo into saldo_til from konto where kontonr = kontonr_til for update;
+    update konto set saldo = saldo - flutt_mongd where kontonr = kontonr_fra;
+    update konto set saldo = saldo + flutt_mongd where kontonr = kontonr_til;
+    select saldo into saldo_fra from konto where kontonr = kontonr_fra;
+    select saldo into saldo_til from konto where kontonr = kontonr_til;
+
+  insert into kladda (
+    kladda_id, kontonr_fra, kontonr_til,
+    mottakara_tekst, egin_tekst, dato,
+    saldo_fra, saldo_til, upphaedd
+  )
+  values (
+    kladda_id_seq.nextval, kontonr_fra, kontonr_til,
+    mottakara_tekst, egin_tekst, sysdate,
+    saldo_fra, saldo_til, flutt_mongd
+  );
+  
+    insert into boking (
+    bokingar_id, kontonr, bokingar_tekst, 
+    dato, upphaedd, bokingar_slag, 
+    leypandi_saldo
+  )
+  values (
+    bokingar_id_seq.nextval, kontonr_fra, mottakara_tekst, 
+    sysdate, -abs(flutt_mongd), 'Flyting', 
+    saldo_fra
+  );
+
+    insert into boking (
+    bokingar_id, kontonr, bokingar_tekst, 
+    dato, upphaedd, bokingar_slag, 
+    leypandi_saldo
+  )
+  values (
+    bokingar_id_seq.nextval, kontonr_til, mottakara_tekst, 
+    sysdate, flutt_mongd, 'Flyting', 
+    saldo_til
+  );
+
+end;
+
+-- Dømi uppá hvussu man skal flyta:
+-- begin
+-- KladdaFlyting(konto_fra, konto_til, mongd, 'Egin tekst', 'Móttakara tekst');
+-- end;
+/
+-- =========================
+-- roknad_rentu Procedure
+-- =========================
+create or replace procedure roknad_rentu (p_kontonr in number)
+is
+    v_saldo   number;
+    v_rentu   number;
+    v_prosent number := 0.05;
+    v_count   number;
+begin
+    select count(*) into v_count
+    from boking
+    where kontonr = p_kontonr
+      and bokingar_slag = 'Renta'
+      and trunc(dato, 'mm') = trunc(sysdate, 'mm');
+
+    if v_count > 0 then
+        return;
+    end if;
+
+    select saldo into v_saldo
+    from konto
+    where kontonr = p_kontonr
+    for update;
+
+    if v_saldo <= 0 then
+        return;
+    end if;
+
+    v_rentu := round(v_saldo * v_prosent, 2);
+    v_saldo := v_saldo + v_rentu;
+
+    insert into boking (
+        bokingar_id, kontonr, bokingar_tekst,
+        dato, upphaedd, bokingar_slag, leypandi_saldo
+    )
+    values (
+        bokingar_id_seq.nextval,
+        p_kontonr,
+        'Mánaðar renta',
+        sysdate,
+        v_rentu,
+        'Renta',
+        v_saldo
+    );
+
+end;
+/
+
+-- =========================
+-- roknad_rentu_manadarliga Procedure
+-- =========================
+create or replace procedure rokna_rentu_manadarliga
+is
+begin
+  for r in (select kontonr from konto) loop
+    roknad_rentu(r.kontonr);
+  end loop;
+end;
+/
+
+-- =========================
+-- roknad_rentu Scheduler_manadarliga
+-- =========================
+
+BEGIN
+  DBMS_SCHEDULER.CREATE_JOB (
+    job_name        => 'RENTU_JOB',
+    job_type        => 'PLSQL_BLOCK',
+    job_action      => 'BEGIN rokna_rentu_manadarliga; END;',
+    start_date      => SYSDATE,
+    repeat_interval => 'FREQ=MONTHLY;BYMONTHDAY=-1',
+    enabled         => TRUE
+  );
+END;
+/
+

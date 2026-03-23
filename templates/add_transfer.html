@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Add Transfer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>{% if is_admin %}Legg afturat flyting{% else %}Flyt Pengar{% endif %}</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul style="color: red;">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <form method="POST">
+        <label for="kontonr_fra">{% if is_admin %}Frá konto{% else %}Frá Konto{% endif %}:</label>
+        <select id="kontonr_fra" name="kontonr_fra" required>
+            {% for acc in accounts %}
+            <option value="{{ acc }}">{{ acc }}</option>
+            {% endfor %}
+        </select>
+        <label for="kontonr_til">{% if is_admin %}Til konto{% else %}Til Konto{% endif %}:</label>
+        {% if is_admin %}
+        <select id="kontonr_til" name="kontonr_til" required>
+            {% for acc in accounts %}
+            <option value="{{ acc }}">{{ acc }}</option>
+            {% endfor %}
+        </select>
+        {% else %}
+        <input type="text" id="kontonr_til" name="kontonr_til" required>
+        {% endif %}
+        <label for="upphaedd">Upphædd:</label>
+        <input type="number" step="0.01" id="upphaedd" name="upphaedd" required>
+        <label for="mottakara_tekst">{% if is_admin %}Móttakara tekst{% else %}Móttakara Tekst{% endif %}:</label>
+        <input type="text" id="mottakara_tekst" name="mottakara_tekst" required>
+        <label for="egin_tekst">{% if is_admin %}Egin tekst{% else %}Egin Tekst{% endif %}:</label>
+        <input type="text" id="egin_tekst" name="egin_tekst" required>
+        <button type="submit">{% if is_admin %}Flyt{% else %}Flyt{% endif %}</button>
+    </form>
+</body>
+
+</html>

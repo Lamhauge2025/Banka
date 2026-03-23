@@ -1,0 +1,63 @@
+drop sequence kontonr_seq;
+drop sequence ptal_seq;
+drop sequence ptal_seq2;
+drop sequence kundi_id_seq;
+drop sequence familju_limir_id_seq;
+drop sequence starvsfolk_id_seq;
+drop sequence kladda_id_seq;
+
+create sequence ptal_seq
+increment by 1
+start with 1
+minvalue 0
+maxvalue 9
+cycle
+nocache;
+
+create sequence ptal_seq2
+increment by 1
+start with 51
+minvalue 50
+maxvalue 59
+cycle
+nocache;
+
+create sequence kontonr_seq
+increment by 1
+start with 1
+minvalue 0
+maxvalue 999
+cycle
+nocache;
+
+create sequence kundi_id_seq
+increment by 1
+start with 1
+minvalue 0
+maxvalue 999999999
+cycle
+nocache;
+
+create sequence starvsfolk_id_seq
+increment by 1
+start with 1
+minvalue 0
+maxvalue 999999999
+cycle
+nocache;
+
+create sequence familju_limir_id_seq
+increment by 1
+start with 1
+minvalue 0
+maxvalue 999999999
+cycle
+nocache;
+
+create sequence  kladda_id_seq
+increment by 1
+start with 1
+minvalue 0
+maxvalue 999999999
+cycle
+nocache;

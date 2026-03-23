@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Login</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 50px;
+        }
+
+        input {
+            margin: 10px;
+            padding: 8px;
+        }
+
+        button {
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Innrita</h1>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul style="color: red;">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <form method="POST">
+        <label for="ptal">P-tal:</label>
+        <input type="text" id="ptal" name="ptal" required><br>
+        <label for="password">Loyniorð:</label>
+        <input type="password" id="password" name="password" required><br>
+        <button type="submit">Innrita</button>
+    </form>
+</body>
+
+</html>

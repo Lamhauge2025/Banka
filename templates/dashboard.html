@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f8f8;
+        }
+
+        .messages {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>{% if is_admin %}Admin Yvirlit{% else %}Familju Kontur{% endif %}</h1>
+    <a href="{{ url_for('logout') }}">Útrita</a>
+    <a href="{{ url_for('add_transaction') }}">Tak út/Set Inn</a>
+    {% if is_admin %}
+    <a href="{{ url_for('add_account') }}">Legg afturat konto</a>
+    <a href="{{ url_for('add_person') }}">Legg afturat persón</a>
+    <a href="{{ url_for('dashboard') }}">Endurnýggja</a>
+    {% endif %}
+    <a href="{{ url_for('add_transfer') }}">Flyt Pengar</a>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <table>
+        <tr>
+            <th>Kontonummur</th>
+            <th>Slag</th>
+            <th>Støða</th>
+            <th>Eigari</th>
+        </tr>
+        {% for account in accounts %}
+        <tr>
+            <td>{{ account[0] }}</td>
+            <td>{{ account[1] }}</td>
+            <td>{{ account[2] }}</td>
+            <td>{{ account[3] }} {{ account[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>

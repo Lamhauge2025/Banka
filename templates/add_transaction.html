@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Add Transaction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tak út/Set Inn</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+    <form method="POST">
+        <label for="kontonr">Kontonummur:</label>
+        <input type="text" id="kontonr" name="kontonr" required>
+        <label for="tekst">Lýsing:</label>
+        <input type="text" id="tekst" name="tekst" required>
+        <label for="upphaedd">Upphædd:</label>
+        <input type="number" step="0.01" id="upphaedd" name="upphaedd" required>
+        <label for="slag">Slag:</label>
+        <select id="slag" name="slag" required>
+            <option value="Deposit">Innlegg</option>
+            <option value="Withdrawal">Uttak</option>
+        </select>
+        <button type="submit">Legg afturat</button>
+    </form>
+</body>
+
+</html>

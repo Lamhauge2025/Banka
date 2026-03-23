@@ -1,0 +1,276 @@
+drop table boking cascade constraints;
+
+drop table familju_limir cascade constraints;
+
+drop table familja cascade constraints;
+
+drop table kladda cascade constraints;
+
+drop table konto cascade constraints;
+
+drop table konto_slag cascade constraints;
+
+drop table kundi cascade constraints;
+
+drop table personur cascade constraints;
+
+drop table postkoda cascade constraints;
+
+-- =========================
+-- postkoda
+-- =========================
+create table postkoda (
+    postkoda        number,
+    byur            varchar2(100),
+    constraint postkoda_pk primary key (postkoda)
+);
+
+-- =========================
+-- personur
+-- =========================
+create table personur (
+    ptal            varchar2(20),
+    postkoda        number,
+    fornavn         varchar2(100),
+    eftirnavn       varchar2(100),
+    adressa         varchar2(200),
+    fodidato        date,
+    kyn             char(1),
+    constraint personur_pk primary key (ptal),
+    constraint personur_postkoda_fk 
+        foreign key (postkoda) references postkoda(postkoda)
+);
+
+-- =========================
+-- kundi
+-- =========================
+create table kundi (
+    kundi_id        number,
+    ptal            varchar2(20),
+    constraint kundi_pk primary key (kundi_id),
+    constraint kundi_ptal_fk 
+        foreign key (ptal) references personur(ptal)
+);
+
+-- =========================
+-- konto_slag
+-- =========================
+create table konto_slag (
+    konto_slag      varchar2(50),
+    rentu_procent   number(5,2),
+    constraint konto_slag_pk primary key (konto_slag)
+);
+
+-- =========================
+-- konto
+-- =========================
+create table konto (
+    kontonr         varchar2(11),
+    konto_slag      varchar2(50),
+    kundi_id        number,
+    saldo           number(12,2),
+    constraint konto_pk primary key (kontonr),
+    constraint konto_slag_fk 
+        foreign key (konto_slag) references konto_slag(konto_slag),
+    constraint konto_kundi_fk 
+        foreign key (kundi_id) references kundi(kundi_id)
+);
+
+-- =========================
+-- boking
+-- =========================
+create table boking (
+    bokingar_id     number,
+    kontonr         varchar2(11),
+    bokingar_tekst  varchar2(200),
+    dato            date,
+    upphaedd        number(12,2),
+    bokingar_slag   varchar2(50),
+    leypandi_saldo  number(12,2),
+    constraint boking_pk primary key (bokingar_id),
+    constraint boking_konto_fk 
+        foreign key (kontonr) references konto(kontonr)
+);
+
+-- =========================
+-- kladda
+-- =========================
+create table kladda (
+    kladda_id       number,
+    kontonr_fra     varchar2(11),
+    kontonr_til     varchar2(11),
+    mottakara_tekst varchar2(200),
+    egin_tekst      varchar2(200),
+    dato            date,
+    saldo_fra       number(12,2),
+    saldo_til       number(12,2),
+    upphaedd        number(12,2),
+    constraint kladda_pk primary key (kladda_id),
+    constraint kladda_konto_fra_fk 
+        foreign key (kontonr_fra) references konto(kontonr),
+    constraint kladda_konto_til_fk 
+        foreign key (kontonr_til) references konto(kontonr)
+);
+
+-- =========================
+-- familja
+-- =========================
+create table familja (
+    familju_id      number,
+    constraint familja_pk primary key (familju_id)
+);
+
+-- =========================
+-- familju_limir
+-- =========================
+create table familju_limir (
+    familju_limir_id number,
+    familju_id       number,
+    ptal             varchar2(20),
+    familju_rolla    varchar2(50),
+    constraint familju_limir_pk primary key (familju_limir_id),
+    constraint familju_fk 
+        foreign key (familju_id) references familja(familju_id),
+    constraint familju_limir_ptal_fk 
+        foreign key (ptal) references personur(ptal)
+);
+
+-- =========================
+-- kontosløg data
+-- =========================
+insert into konto_slag values('Debit',12.0);
+insert into konto_slag values('Kredit',15.0);
+insert into konto_slag values('Trota',18.0);
+
+-- =========================
+-- Postnummur í fø
+-- =========================
+insert into postkoda values (100, 'Tórshavn');
+insert into postkoda values (160, 'Argir');
+insert into postkoda values (175, 'Kirkjubøur');
+insert into postkoda values (176, 'Velbastaður');
+insert into postkoda values (177, 'Syðradalur S');
+insert into postkoda values (178, 'Norðradalur');
+insert into postkoda values (180, 'Kaldbak');
+insert into postkoda values (185, 'Kaldbaksbotnur');
+insert into postkoda values (186, 'Sund');
+insert into postkoda values (187, 'Hvístanes');
+insert into postkoda values (188, 'Hoyvík');
+
+insert into postkoda values (210, 'Sandur');
+insert into postkoda values (220, 'Skálavík');
+insert into postkoda values (230, 'Húsavík');
+insert into postkoda values (235, 'Dalur');
+insert into postkoda values (236, 'Skarvanes');
+insert into postkoda values (240, 'Skopun');
+insert into postkoda values (260, 'Skúvoy');
+insert into postkoda values (270, 'Nólsoy');
+insert into postkoda values (280, 'Hestur');
+insert into postkoda values (285, 'Koltur');
+insert into postkoda values (286, 'Stóra Dímun');
+
+insert into postkoda values (330, 'Stykkið');
+insert into postkoda values (335, 'Leynar');
+insert into postkoda values (336, 'Skælingur');
+insert into postkoda values (340, 'Kvívík');
+insert into postkoda values (350, 'Vestmanna');
+insert into postkoda values (358, 'Válur');
+insert into postkoda values (360, 'Sandavágur');
+insert into postkoda values (370, 'Miðvágur');
+insert into postkoda values (380, 'Sørvágur');
+insert into postkoda values (385, 'Vatnsoyrar');
+insert into postkoda values (386, 'Bøur');
+insert into postkoda values (387, 'Gásadalur');
+insert into postkoda values (388, 'Mykines');
+
+insert into postkoda values (400, 'Oyrarbakki');
+insert into postkoda values (410, 'Kollafjørður');
+insert into postkoda values (415, 'Oyrareingir');
+insert into postkoda values (416, 'Signabøur');
+insert into postkoda values (420, 'Hósvík');
+insert into postkoda values (430, 'Hvalvík');
+insert into postkoda values (435, 'Streymnes');
+insert into postkoda values (436, 'Saksun');
+insert into postkoda values (437, 'Nesvík');
+insert into postkoda values (438, 'Langasandur');
+insert into postkoda values (440, '´Haldórsvík');
+insert into postkoda values (445, 'Tjørnuvík');
+insert into postkoda values (450, 'Oyri');
+insert into postkoda values (460, 'Norðskáli');
+insert into postkoda values (465, 'Svínáir');
+insert into postkoda values (466, 'Ljósá');
+insert into postkoda values (470, 'Eiði');
+insert into postkoda values (475, 'Funningur');
+insert into postkoda values (476, 'Gjógv');
+insert into postkoda values (477, 'Funningursfjøður');
+insert into postkoda values (478, 'Elduvík');
+insert into postkoda values (480, 'Skála');
+insert into postkoda values (485, 'Skálabotnur');
+insert into postkoda values (490, 'Strendur');
+insert into postkoda values (494, 'Innan Glyvur');
+insert into postkoda values (495, 'Kolbeinagjógv');
+insert into postkoda values (496, 'Morskranes');
+insert into postkoda values (497, 'Selatrað');
+
+insert into postkoda values (510, 'Gøta');
+insert into postkoda values (511, 'Gøtugjógv');
+insert into postkoda values (512, 'Norðragøta');
+insert into postkoda values (513, 'Syðrugøta');
+insert into postkoda values (520, 'Leirvík');
+insert into postkoda values (530, 'Fuglafjørður');
+
+insert into postkoda values (600, 'Saltangará');
+insert into postkoda values (620, 'Runavík');
+insert into postkoda values (625, 'Glyvrar');
+insert into postkoda values (626, 'Lambareiði');
+insert into postkoda values (627, 'Lamba');
+insert into postkoda values (640, 'Rituvík');
+insert into postkoda values (645, 'Æðuvík');
+
+insert into postkoda values (650, 'Toftir');
+insert into postkoda values (655, 'Nes Eysturoy');
+insert into postkoda values (656, 'Saltnes');
+insert into postkoda values (660, 'Søldarfjørður');
+insert into postkoda values (665, 'Skipanes');
+insert into postkoda values (666, 'Undir Gøtueiði');
+insert into postkoda values (690, 'Oyndarfjørður');
+insert into postkoda values (695, 'Hellurnar');
+
+insert into postkoda values (700, 'Klaksvík');
+insert into postkoda values (725, 'Norðoyri');
+insert into postkoda values (726, 'Árnirnar');
+insert into postkoda values (727, 'Árnafjørður');
+insert into postkoda values (730, 'Norðdepil');
+insert into postkoda values (735, 'Depil');
+insert into postkoda values (736, 'Norðtoftir');
+insert into postkoda values (737, 'Múli');
+insert into postkoda values (740, 'Hvannasund');
+insert into postkoda values (750, 'Viðareiði');
+insert into postkoda values (765, 'Svínoy');
+insert into postkoda values (766, 'Kirkja');
+insert into postkoda values (767, 'Hattarvík');
+insert into postkoda values (780, 'Kunoy');
+insert into postkoda values (785, 'Haraldsund');
+insert into postkoda values (795, 'Syðradalur K');
+insert into postkoda values (796, 'Húsar');
+insert into postkoda values (797, 'Mikladalur');
+insert into postkoda values (798, 'Trøllanes');
+
+insert into postkoda values (800, 'Tvøroyri');
+insert into postkoda values (825, 'Froba');
+insert into postkoda values (826, 'Trongisvágur');
+insert into postkoda values (827, 'Øravík');
+insert into postkoda values (850, 'Hvalba');
+insert into postkoda values (860, 'Sandavík');
+insert into postkoda values (870, 'Fámjin');
+
+insert into postkoda values (900, 'Vágur');
+insert into postkoda values (925, 'Nes Vágur');
+insert into postkoda values (926, 'Lopra');
+insert into postkoda values (927, 'Akrar');
+insert into postkoda values (928, 'Víkarbyrgi');
+insert into postkoda values (950, 'Porkeri');
+insert into postkoda values (960, 'Hov');
+insert into postkoda values (970, 'Sumba');
+
+commit;
