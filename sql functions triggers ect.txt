@@ -138,16 +138,17 @@ end;
 
 
 -- =========================
--- hansgjordihetta view
+-- Familju_view
 -- =========================
-create or replace view hansgjordihetta as 
-select konto.*
-from personur p1 inner join familju_limir f1 on p1.ptal = f1.ptal
-     inner join familju_limir f2 on f1.familju_id = f2.familju_id
-     inner join personur p2 on p2.ptal = f2.ptal
-     inner join kundi on kundi.ptal = p2.ptal
-     inner join konto on konto.kundi_id = kundi.kundi_id
-where p1.ptal = '280299014';
+create or replace view Familju_view as 
+select distinct p1.ptal as Brúkari, p2.ptal as familju_ptal, f2.familju_rolla, p2.fornavn as Fornøvn, konto.*
+from personur p1 
+inner join familju_limir f1 on p1.ptal = f1.ptal
+inner join familju_limir f2 on f1.familju_id = f2.familju_id
+inner join personur p2 on p2.ptal = f2.ptal
+inner join kundi on kundi.ptal = p2.ptal
+inner join konto on konto.kundi_id = kundi.kundi_id
+where f2.familju_rolla in ('Barn', 'Maður', 'Kona');
 /
 
 

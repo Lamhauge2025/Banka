@@ -98,14 +98,24 @@
                 <th>Kontonummur</th>
                 <th>Slag</th>
                 <th>Saldo</th>
+                {% if is_admin %}
                 <th>Eigari</th>
+                {% else %}
+                <th>Navn</th>
+                <th>Familju Rolla</th>
+                {% endif %}
             </tr>
             {% for account in accounts %}
             <tr>
                 <td>{{ account[0] }}</td>
                 <td>{{ account[1] }}</td>
                 <td>{{ account[2] }}</td>
+                {% if is_admin %}
                 <td>{{ account[3] }} {{ account[4] }}</td>
+                {% else %}
+                <td>{{ account[4] }}</td>
+                <td>{{ account[3] }}</td>
+                {% endif %}
             </tr>
             {% endfor %}
         </table>

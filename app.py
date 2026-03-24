@@ -70,47 +70,11 @@ def dashboard():
         """)
         accounts = cursor.fetchall()
     else:
-        # Regular user: family accounts
-        # Find family id
-        cursor.execute("""
-            SELECT f.familju_id
-            FROM familju_limir fl
-            JOIN familja f ON fl.familju_id = f.familju_id
-            WHERE fl.ptal = :ptal
-        """, {'ptal': ptal})
-        family = cursor.fetchone()
-
-        accounts = []
-        if family:
-            familju_id = family[0]
-            # Get all family members' ptal
-            cursor.execute("SELECT ptal FROM familju_limir WHERE familju_id = :fid", {
-                           'fid': familju_id})
-            members = cursor.fetchall()
-            ptals = [m[0] for m in members]
-
-            # Get their kundi_id
-            if ptals:
-                placeholders = ','.join([':' + str(i)
-                                        for i in range(len(ptals))])
-                params = {str(i): p for i, p in enumerate(ptals)}
-                cursor.execute(
-                    f"SELECT kundi_id FROM kundi WHERE ptal IN ({placeholders})", params)
-                kundis = cursor.fetchall()
-                kundi_ids = [k[0] for k in kundis]
-
-                if kundi_ids:
-                    placeholders = ','.join([':' + str(i)
-                                            for i in range(len(kundi_ids))])
-                    params = {str(i): k for i, k in enumerate(kundi_ids)}
-                    cursor.execute(f"""
-                        SELECT k.kontonr, k.konto_slag, k.saldo, p.fornavn, p.eftirnavn
-                        FROM konto k
-                        JOIN kundi ku ON k.kundi_id = ku.kundi_id
-                        JOIN personur p ON ku.ptal = p.ptal
-                        WHERE k.kundi_id IN ({placeholders})
-                    """, params)
-                    accounts = cursor.fetchall()
+        cursor.execute(
+            "SELECT kontonr, konto_slag, saldo, familju_rolla, fornøvn FROM Familju_view WHERE brúkari = :ptal",
+            {'ptal': ptal}
+        )
+        accounts = cursor.fetchall()
 
     cursor.close()
     conn.close()
