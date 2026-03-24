@@ -117,23 +117,52 @@ def add_transaction():
             conn.close()
             return redirect(url_for('add_transaction'))
 
-        # Get next bokingar_id
-        cursor.execute("SELECT NVL(MAX(bokingar_id), 0) + 1 FROM boking")
-        boking_id = cursor.fetchone()[0]
+        # Get current saldo for the chosen account
+        cursor.execute(
+            "SELECT saldo FROM konto WHERE kontonr = :k", {'k': kontonr})
+        saldo = cursor.fetchone()
+        if not saldo:
+            flash('Ógyldigur konto')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('add_transaction'))
 
-        # Insert boking
+        # For regular users, verify account ownership
+        if not is_admin:
+            cursor.execute("""
+                SELECT 1
+                FROM konto k
+                JOIN kundi ku ON k.kundi_id = ku.kundi_id
+                WHERE k.kontonr = :kontonr AND ku.ptal = :ptal
+            """, {'kontonr': kontonr, 'ptal': ptal})
+            own = cursor.fetchone()
+            if not own:
+                flash('Konto hoyrir ikki til teg')
+                cursor.close()
+                conn.close()
+                return redirect(url_for('add_transaction'))
+
+        # Determine withdrawal mode (English and Faroese labels)
+        is_withdrawal = slag.strip().lower() in (
+            'withdrawal', 'tak út', 'tak ut', 'takut')
+
+        # Ensure sufficient withdrawal balance
+        if is_withdrawal and saldo[0] < upphaedd:
+            flash('Ikki nóg nógvar pengar')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('add_transaction'))
+
+        # Insert booking row and rely on boking_insert trigger to update konto saldo
         cursor.execute("""
-            INSERT INTO boking (bokingar_id, kontonr, bokingar_tekst, dato, upphaedd, bokingar_slag, leypandi_saldo)
-            VALUES (:id, :kontonr, :tekst, SYSDATE, :upphaedd, :slag, 0)
-        """, {'id': boking_id, 'kontonr': kontonr, 'tekst': tekst, 'upphaedd': upphaedd, 'slag': slag})
-
-        # Update saldo (simple, assuming positive for deposit, negative for withdrawal)
-        if slag == 'Deposit':
-            cursor.execute("UPDATE konto SET saldo = saldo + :amt WHERE kontonr = :kontonr",
-                           {'amt': upphaedd, 'kontonr': kontonr})
-        elif slag == 'Withdrawal':
-            cursor.execute("UPDATE konto SET saldo = saldo - :amt WHERE kontonr = :kontonr",
-                           {'amt': upphaedd, 'kontonr': kontonr})
+            INSERT INTO boking (kontonr, bokingar_tekst, upphaedd, bokingar_slag)
+            VALUES (:kontonr, :tekst, :amt, :slag)
+        """, {
+            'kontonr': kontonr,
+            'tekst': tekst,
+            'amt': upphaedd,
+            'slag': slag
+        })
 
         conn.commit()
         cursor.close()
