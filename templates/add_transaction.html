@@ -74,7 +74,11 @@
     <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
     <form method="POST">
         <label for="kontonr">Kontonummur:</label>
-        <input type="text" id="kontonr" name="kontonr" required>
+        <select id="kontonr" name="kontonr" required>
+            {% for acc in accounts %}
+            <option value="{{ acc }}">{{ acc }}</option>
+            {% endfor %}
+        </select>
         <label for="tekst">Lýsing:</label>
         <input type="text" id="tekst" name="tekst" required>
         <label for="upphaedd">Upphædd:</label>

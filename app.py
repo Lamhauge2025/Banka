@@ -87,14 +87,35 @@ def add_transaction():
     if 'ptal' not in session:
         return redirect(url_for('login'))
 
+    ptal = session['ptal']
+    is_admin = (ptal == 'admin')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if is_admin:
+        cursor.execute("SELECT kontonr FROM konto ORDER BY kontonr")
+    else:
+        cursor.execute("""
+            SELECT k.kontonr
+            FROM konto k
+            JOIN kundi ku ON k.kundi_id = ku.kundi_id
+            WHERE ku.ptal = :ptal
+            ORDER BY k.kontonr
+        """, {'ptal': ptal})
+    accounts = [row[0] for row in cursor.fetchall()]
+
     if request.method == 'POST':
         kontonr = request.form['kontonr']
         tekst = request.form['tekst']
         upphaedd = float(request.form['upphaedd'])
         slag = request.form['slag']
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        if kontonr not in accounts:
+            flash('Konto hoyrir ikki til teg')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('add_transaction'))
 
         # Get next bokingar_id
         cursor.execute("SELECT NVL(MAX(bokingar_id), 0) + 1 FROM boking")
@@ -121,7 +142,10 @@ def add_transaction():
         flash('Færslu lagt afturat')
         return redirect(url_for('dashboard'))
 
-    return render_template('add_transaction.html')
+    cursor.close()
+    conn.close()
+
+    return render_template('add_transaction.html', accounts=accounts)
 
 
 @app.route('/gen_ptal', methods=['GET', 'POST'])
@@ -207,6 +231,20 @@ def add_transfer():
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        if not is_admin:
+            cursor.execute("""
+                SELECT 1
+                FROM konto k
+                JOIN kundi ku ON k.kundi_id = ku.kundi_id
+                WHERE k.kontonr = :kontonr AND ku.ptal = :ptal
+            """, {'kontonr': kontonr_fra, 'ptal': ptal})
+            owns_from_account = cursor.fetchone()
+            if not owns_from_account:
+                flash('Frá konto hoyrir ikki til teg')
+                cursor.close()
+                conn.close()
+                return redirect(url_for('add_transfer'))
+
         # Check if accounts exist and get current saldos
         cursor.execute("SELECT saldo FROM konto WHERE kontonr = :k", {
                        'k': kontonr_fra})
@@ -250,39 +288,28 @@ def add_transfer():
         flash('Flyting liðug')
         return redirect(url_for('dashboard'))
 
-    # Get available accounts for the user
+    # Get available accounts for dropdowns
     conn = get_db_connection()
     cursor = conn.cursor()
 
     if is_admin:
-        cursor.execute("SELECT kontonr FROM konto")
+        cursor.execute("SELECT kontonr FROM konto ORDER BY kontonr")
+        from_accounts = [row[0] for row in cursor.fetchall()]
     else:
-        # Family accounts
+        # From-account: only accounts owned by signed-in user
         cursor.execute("""
-            SELECT f.familju_id
-            FROM familju_limir fl
-            JOIN familja f ON fl.familju_id = f.familju_id
-            WHERE fl.ptal = :ptal
+            SELECT k.kontonr
+            FROM konto k
+            JOIN kundi ku ON k.kundi_id = ku.kundi_id
+            WHERE ku.ptal = :ptal
+            ORDER BY k.kontonr
         """, {'ptal': ptal})
-        family = cursor.fetchone()
+        from_accounts = [row[0] for row in cursor.fetchall()]
 
-        if family:
-            familju_id = family[0]
-            cursor.execute("""
-                SELECT DISTINCT k.kontonr
-                FROM konto k
-                JOIN kundi ku ON k.kundi_id = ku.kundi_id
-                JOIN familju_limir fl ON ku.ptal = fl.ptal
-                WHERE fl.familju_id = :fid
-            """, {'fid': familju_id})
-        else:
-            accounts = []
-
-    accounts = [row[0] for row in cursor.fetchall()]
     cursor.close()
     conn.close()
 
-    return render_template('add_transfer.html', accounts=accounts, is_admin=is_admin)
+    return render_template('add_transfer.html', from_accounts=from_accounts, is_admin=is_admin)
 
 
 @app.route('/add_person', methods=['GET', 'POST'])

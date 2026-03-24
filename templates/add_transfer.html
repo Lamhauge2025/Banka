@@ -84,20 +84,12 @@
     <form method="POST">
         <label for="kontonr_fra">{% if is_admin %}Frá konto{% else %}Frá Konto{% endif %}:</label>
         <select id="kontonr_fra" name="kontonr_fra" required>
-            {% for acc in accounts %}
+            {% for acc in from_accounts %}
             <option value="{{ acc }}">{{ acc }}</option>
             {% endfor %}
         </select>
         <label for="kontonr_til">{% if is_admin %}Til konto{% else %}Til Konto{% endif %}:</label>
-        {% if is_admin %}
-        <select id="kontonr_til" name="kontonr_til" required>
-            {% for acc in accounts %}
-            <option value="{{ acc }}">{{ acc }}</option>
-            {% endfor %}
-        </select>
-        {% else %}
         <input type="text" id="kontonr_til" name="kontonr_til" required>
-        {% endif %}
         <label for="upphaedd">Upphædd:</label>
         <input type="number" step="0.01" id="upphaedd" name="upphaedd" required>
         <label for="mottakara_tekst">{% if is_admin %}Móttakara tekst{% else %}Móttakara Tekst{% endif %}:</label>
