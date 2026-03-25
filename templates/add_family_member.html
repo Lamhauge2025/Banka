@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Legg afturat familjulim</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-width: 360px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            text-align: left;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .messages {
+            color: red;
+            list-style-position: inside;
+            padding: 0;
+        }
+
+        table {
+            margin: 30px auto 0;
+            border-collapse: collapse;
+            width: min(900px, 100%);
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .family-separator td {
+            background-color: #e9f2ff;
+            font-weight: bold;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Legg afturat familjulim</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label for="member_ptal">Persónur (P-tal):</label>
+        <select id="member_ptal" name="member_ptal" required>
+            {% for person in linked_people %}
+            <option value="{{ person[0] }}">{{ person[0] }} - {{ person[1] }} {{ person[2] }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="familju_id">Familju ID:</label>
+        <input type="number" id="familju_id" name="familju_id" placeholder="Lat standa tómt fyri nýggja familju">
+
+        <label for="familju_rolla">Familjurolla:</label>
+        <input type="text" id="familju_rolla" name="familju_rolla" required>
+
+        <button type="submit">Legg familjulim afturat</button>
+    </form>
+
+    <h2>Verandi familjur</h2>
+    <table>
+        <tr>
+            <th>Familju ID</th>
+            <th>P-tal</th>
+            <th>Navn</th>
+            <th>Familjurolla</th>
+        </tr>
+        {% set ns = namespace(current_family_id=None) %}
+        {% for member in family_members %}
+        {% if ns.current_family_id != member[0] %}
+        <tr class="family-separator">
+            <td colspan="4">Familja {{ member[0] }}</td>
+        </tr>
+        {% set ns.current_family_id = member[0] %}
+        {% endif %}
+        <tr>
+            <td>{{ member[0] }}</td>
+            <td>{{ member[1] }}</td>
+            <td>{{ member[2] }} {{ member[3] }}</td>
+            <td>{{ member[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>

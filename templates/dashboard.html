@@ -72,17 +72,19 @@
 </head>
 
 <body>
-    <h1>{% if is_admin %}Admin Yvirlit{% else %}Kontur{% endif %}</h1>
+    <h1>{% if is_admin %}Banka Yvirlit{% else %}Kontur{% endif %}</h1>
     <a href="{{ url_for('logout') }}">Útrita</a>
     <a href="{{ url_for('add_transaction') }}">Tak út/Set Inn</a>
     {% if is_admin %}
     <a href="{{ url_for('add_account') }}">Legg afturat konto</a>
     <a href="{{ url_for('add_person') }}">Legg afturat persón</a>
+    <a href="{{ url_for('add_family_member') }}">Legg afturat familjulim</a>
     <a href="{{ url_for('kundar') }}">Kundar</a>
     {% endif %}
     <a href="{{ url_for('add_transfer') }}">Flyt Pengar</a>
     <a href="{{ url_for('bokingar') }}">Bokingar</a>
     <a href="{{ url_for('kladda') }}">Flytingar</a>
+    <a href="{{ url_for('seinasti_manin') }}">Seinasti Mánin</a>
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     <ul class="messages">

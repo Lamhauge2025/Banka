@@ -77,7 +77,7 @@ A Flask-based banking web application connected to Oracle Database that allows u
 ## Login Credentials
 
 ### Admin Account
-- **P-tal**: `admin`
+- **P-tal**: `banki`
 - **Password**: `password`
 
 ### Regular User

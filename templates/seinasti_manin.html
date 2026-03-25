@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Seinasti Mánin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        select,
+        button {
+            padding: 8px;
+            margin: 6px;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 700px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f8f8;
+        }
+
+        .messages {
+            color: red;
+            list-style-position: inside;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Seinasti Mánin Yvirlit</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur</a>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    <form method="GET">
+        <label for="kontonr">Vel konto:</label>
+        <select id="kontonr" name="kontonr" required>
+            {% for acc in accounts %}
+            <option value="{{ acc }}" {% if selected_kontonr==acc %}selected{% endif %}>{{ acc }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Vís</button>
+    </form>
+
+    {% if rows %}
+    <table>
+        <tr>
+            <th>Kontonr</th>
+            <th>Upphædd</th>
+        </tr>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>Ongin data funnin fyri valdu kontu</p>
+    {% endif %}
+</body>
+
+</html>

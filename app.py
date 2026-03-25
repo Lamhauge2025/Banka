@@ -21,7 +21,7 @@ def login():
         ptal = request.form['ptal']
         pwd = request.form['password']
         if pwd == 'password':
-            if ptal == 'admin':
+            if ptal == 'banki':
                 session['ptal'] = 'admin'
                 return redirect(url_for('dashboard'))
             else:
@@ -29,7 +29,7 @@ def login():
                 conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT ptal FROM personur WHERE UPPER(ptal) = UPPER(:ptal)", {'ptal': ptal})
+                    "select ptal from personur where ptal = :ptal", {'ptal': ptal})
                 user = cursor.fetchone()
                 cursor.close()
                 conn.close()
@@ -62,24 +62,97 @@ def dashboard():
     if is_admin:
         # Admin sees all accounts
         cursor.execute("""
-            SELECT k.kontonr, k.konto_slag, k.saldo, p.fornavn, p.eftirnavn
-            FROM konto k
-            JOIN kundi ku ON k.kundi_id = ku.kundi_id
-            JOIN personur p ON ku.ptal = p.ptal
-            order by p.fornavn asc
+            select * from banki_view
         """)
         accounts = cursor.fetchall()
     else:
         cursor.execute(
-            "SELECT kontonr, konto_slag, saldo, familju_rolla, fornøvn FROM Familju_view WHERE brúkari = :ptal",
+            """
+            select 1
+            from familju_limir
+            where ptal = :ptal and upper(familju_rolla) = 'BARN'
+            fetch first 1 row only
+            """,
             {'ptal': ptal}
         )
+        is_child = cursor.fetchone() is not None
+
+        if is_child:
+            cursor.execute(
+                """
+                select kontonr, konto_slag, saldo, familju_rolla, fornavn
+                from barn_view
+                where ptal = :ptal
+                """,
+                {'ptal': ptal}
+            )
+        else:
+            cursor.execute(
+                "select kontonr, konto_slag, saldo, familju_rolla, fornøvn from Familju_view where brúkari = :ptal",
+                {'ptal': ptal}
+            )
         accounts = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
     return render_template('dashboard.html', accounts=accounts, is_admin=is_admin)
+
+
+@app.route('/seinasti_manin')
+def seinasti_manin():
+    if 'ptal' not in session:
+        return redirect(url_for('login'))
+
+    ptal = session['ptal']
+    is_admin = (ptal == 'admin')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if is_admin:
+        cursor.execute("SELECT kontonr FROM konto ORDER BY kontonr")
+    else:
+        cursor.execute(
+            """
+            SELECT k.kontonr
+            FROM konto k
+            JOIN kundi ku ON k.kundi_id = ku.kundi_id
+            WHERE ku.ptal = :ptal
+            ORDER BY k.kontonr
+            """,
+            {'ptal': ptal}
+        )
+
+    allowed_accounts = [row[0] for row in cursor.fetchall()]
+    selected_kontonr = request.args.get('kontonr')
+
+    if not selected_kontonr and allowed_accounts:
+        selected_kontonr = allowed_accounts[0]
+
+    rows = []
+    if selected_kontonr:
+        if selected_kontonr not in allowed_accounts:
+            flash('Konto hoyrir ikki til teg')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('seinasti_manin'))
+
+        cursor.execute(
+            "select * from seinasti_manin_yvirlit where kontonr = :kontonr",
+            {'kontonr': selected_kontonr}
+        )
+        rows = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'seinasti_manin.html',
+        accounts=allowed_accounts,
+        selected_kontonr=selected_kontonr,
+        rows=rows,
+    )
 
 
 @app.route('/add_transaction', methods=['GET', 'POST'])
@@ -94,14 +167,14 @@ def add_transaction():
     cursor = conn.cursor()
 
     if is_admin:
-        cursor.execute("SELECT kontonr FROM konto ORDER BY kontonr")
+        cursor.execute("select kontonr from konto order by kontonr")
     else:
         cursor.execute("""
-            SELECT k.kontonr
-            FROM konto k
-            JOIN kundi ku ON k.kundi_id = ku.kundi_id
-            WHERE ku.ptal = :ptal
-            ORDER BY k.kontonr
+            select k.kontonr
+            from konto k
+        join kundi ku on k.kundi_id = ku.kundi_id
+            where ku.ptal = :ptal
+            order by k.kontonr
         """, {'ptal': ptal})
     accounts = [row[0] for row in cursor.fetchall()]
 
@@ -117,23 +190,21 @@ def add_transaction():
             conn.close()
             return redirect(url_for('add_transaction'))
 
-        # Get next bokingar_id
-        cursor.execute("SELECT NVL(MAX(bokingar_id), 0) + 1 FROM boking")
-        boking_id = cursor.fetchone()[0]
-
-        # Insert boking
-        cursor.execute("""
-            INSERT INTO boking (bokingar_id, kontonr, bokingar_tekst, dato, upphaedd, bokingar_slag, leypandi_saldo)
-            VALUES (:id, :kontonr, :tekst, SYSDATE, :upphaedd, :slag, 0)
-        """, {'id': boking_id, 'kontonr': kontonr, 'tekst': tekst, 'upphaedd': upphaedd, 'slag': slag})
-
-        # Update saldo (simple, assuming positive for deposit, negative for withdrawal)
         if slag == 'Deposit':
-            cursor.execute("UPDATE konto SET saldo = saldo + :amt WHERE kontonr = :kontonr",
-                           {'amt': upphaedd, 'kontonr': kontonr})
+            signed_upphaedd = upphaedd
         elif slag == 'Withdrawal':
-            cursor.execute("UPDATE konto SET saldo = saldo - :amt WHERE kontonr = :kontonr",
-                           {'amt': upphaedd, 'kontonr': kontonr})
+            signed_upphaedd = -upphaedd
+        else:
+            flash('Ógyldugt slag')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('add_transaction'))
+
+        # The trigger sets bokingar_id, dato, leypandi_saldo, and updates konto.saldo.
+        cursor.execute("""
+            INSERT INTO boking (kontonr, bokingar_tekst, upphaedd, bokingar_slag)
+            VALUES (:kontonr, :tekst, :upphaedd, :slag)
+        """, {'kontonr': kontonr, 'tekst': tekst, 'upphaedd': signed_upphaedd, 'slag': slag})
 
         conn.commit()
         cursor.close()
@@ -224,66 +295,55 @@ def add_transfer():
         mottakara_tekst = request.form['mottakara_tekst']
         egin_tekst = request.form['egin_tekst']
 
-        if kontonr_fra == kontonr_til:
-            flash('Kann ikki flyta til sama konto')
+        try:
+            kontonr_fra_num = int(kontonr_fra)
+            kontonr_til_num = int(kontonr_til)
+        except ValueError:
+            flash('Ógyldugt konto')
             return redirect(url_for('add_transfer'))
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        if not is_admin:
-            cursor.execute("""
-                SELECT 1
-                FROM konto k
-                JOIN kundi ku ON k.kundi_id = ku.kundi_id
-                WHERE k.kontonr = :kontonr AND ku.ptal = :ptal
-            """, {'kontonr': kontonr_fra, 'ptal': ptal})
-            owns_from_account = cursor.fetchone()
-            if not owns_from_account:
-                flash('Frá konto hoyrir ikki til teg')
-                cursor.close()
-                conn.close()
-                return redirect(url_for('add_transfer'))
+        try:
+            if not is_admin:
+                cursor.execute("""
+                    SELECT 1
+                    FROM konto k
+                    JOIN kundi ku ON k.kundi_id = ku.kundi_id
+                    WHERE k.kontonr = :kontonr AND ku.ptal = :ptal
+                """, {'kontonr': kontonr_fra_num, 'ptal': ptal})
+                owns_from_account = cursor.fetchone()
+                if not owns_from_account:
+                    flash('Frá konto hoyrir ikki til teg')
+                    return redirect(url_for('add_transfer'))
 
-        # Check if accounts exist and get current saldos
-        cursor.execute("SELECT saldo FROM konto WHERE kontonr = :k", {
-                       'k': kontonr_fra})
-        saldo_fra = cursor.fetchone()
-        cursor.execute("SELECT saldo FROM konto WHERE kontonr = :k", {
-                       'k': kontonr_til})
-        saldo_til = cursor.fetchone()
-
-        if not saldo_fra or not saldo_til:
-            flash('Ógyldugt konto')
+            cursor.callproc('KladdaFlyting', [
+                kontonr_fra_num,
+                kontonr_til_num,
+                upphaedd,
+                mottakara_tekst,
+                egin_tekst,
+            ])
+            conn.commit()
+        except oracledb.DatabaseError as exc:
+            conn.rollback()
+            error = exc.args[0]
+            code = getattr(error, 'code', None)
+            if code == 20001:
+                flash('Ikki nóg pengar')
+            elif code == 20002:
+                flash('Upphædd má vera størri enn 0')
+            elif code == 20003:
+                flash('Kann ikki flyta til sama konto')
+            elif code == 1403:
+                flash('Ógyldugt konto')
+            else:
+                flash(getattr(error, 'message', str(exc)))
+            return redirect(url_for('add_transfer'))
+        finally:
             cursor.close()
             conn.close()
-            return redirect(url_for('add_transfer'))
-
-        if saldo_fra[0] < upphaedd:
-            flash('Ikki nóg pengar')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('add_transfer'))
-
-        # Get next kladda_id
-        cursor.execute("SELECT NVL(MAX(kladda_id), 0) + 1 FROM kladda")
-        kladda_id = cursor.fetchone()[0]
-
-        # Insert into kladda
-        cursor.execute("""
-            INSERT INTO kladda (kladda_id, kontonr_fra, kontonr_til, mottakara_tekst, egin_tekst, dato, saldo_fra, saldo_til, upphaedd)
-            VALUES (:id, :fra, :til, :mtekst, :etekt, SYSDATE, :sfra, :stil, :amt)
-        """, {'id': kladda_id, 'fra': kontonr_fra, 'til': kontonr_til, 'mtekst': mottakara_tekst, 'etekt': egin_tekst, 'sfra': saldo_fra[0], 'stil': saldo_til[0], 'amt': upphaedd})
-
-        # Update saldos
-        cursor.execute("UPDATE konto SET saldo = saldo - :amt WHERE kontonr = :k",
-                       {'amt': upphaedd, 'k': kontonr_fra})
-        cursor.execute("UPDATE konto SET saldo = saldo + :amt WHERE kontonr = :k",
-                       {'amt': upphaedd, 'k': kontonr_til})
-
-        conn.commit()
-        cursor.close()
-        conn.close()
 
         flash('Flyting liðug')
         return redirect(url_for('dashboard'))
@@ -367,6 +427,110 @@ def add_person():
     conn.close()
 
     return render_template('add_person.html', postkodas=postkodas)
+
+
+@app.route('/add_family_member', methods=['GET', 'POST'])
+def add_family_member():
+    if 'ptal' not in session or session['ptal'] != 'admin':
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        member_ptal = request.form['member_ptal']
+        familju_id_value = request.form['familju_id'].strip()
+        familju_rolla = request.form['familju_rolla'].strip()
+
+        if not familju_rolla:
+            flash('Familjurolla manglar')
+            return redirect(url_for('add_family_member'))
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT 1 FROM personur WHERE ptal = :ptal", {
+                           'ptal': member_ptal})
+            if not cursor.fetchone():
+                flash('Persónur er ikki funnin')
+                return redirect(url_for('add_family_member'))
+
+            if familju_id_value:
+                try:
+                    familju_id = int(familju_id_value)
+                except ValueError:
+                    flash('Familju ID má vera eitt tal')
+                    return redirect(url_for('add_family_member'))
+
+                cursor.execute(
+                    "SELECT 1 FROM familja WHERE familju_id = :familju_id",
+                    {'familju_id': familju_id},
+                )
+                if not cursor.fetchone():
+                    flash('Familju ID er ikki funnið')
+                    return redirect(url_for('add_family_member'))
+            else:
+                cursor.execute(
+                    "SELECT NVL(MAX(familju_id), 0) + 1 FROM familja")
+                familju_id = cursor.fetchone()[0]
+                cursor.execute(
+                    "INSERT INTO familja (familju_id) VALUES (:familju_id)",
+                    {'familju_id': familju_id},
+                )
+
+            cursor.execute(
+                "SELECT 1 FROM familju_limir WHERE familju_id = :familju_id AND ptal = :ptal",
+                {'familju_id': familju_id, 'ptal': member_ptal},
+            )
+            if cursor.fetchone():
+                flash('Persónur er longu í hesi familju')
+                return redirect(url_for('add_family_member'))
+
+            cursor.execute(
+                """
+                INSERT INTO familju_limir (familju_id, ptal, familju_rolla)
+                VALUES (:familju_id, :ptal, :rolla)
+                """,
+                {'familju_id': familju_id, 'ptal': member_ptal,
+                    'rolla': familju_rolla},
+            )
+
+            conn.commit()
+            flash(f'Familjulimur lagdur í familju {familju_id}')
+            return redirect(url_for('dashboard'))
+        except oracledb.DatabaseError:
+            conn.rollback()
+            flash('Kundi ikki leggja familjulim afturat')
+            return redirect(url_for('add_family_member'))
+        finally:
+            cursor.close()
+            conn.close()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT p.ptal, p.fornavn, p.eftirnavn
+        FROM personur p
+        ORDER BY p.fornavn, p.eftirnavn
+        """
+    )
+    linked_people = cursor.fetchall()
+    cursor.execute(
+        """
+        SELECT fl.familju_id, fl.ptal, p.fornavn, p.eftirnavn, fl.familju_rolla
+        FROM familju_limir fl
+        JOIN personur p ON p.ptal = fl.ptal
+        ORDER BY fl.familju_id, p.fornavn, p.eftirnavn
+        """
+    )
+    family_members = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'add_family_member.html',
+        linked_people=linked_people,
+        family_members=family_members,
+    )
 
 
 @app.route('/kundar')
