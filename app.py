@@ -122,7 +122,7 @@ def add_transaction():
             "SELECT saldo FROM konto WHERE kontonr = :k", {'k': kontonr})
         saldo = cursor.fetchone()
         if not saldo:
-            flash('Ógyldigur konto')
+            flash('Ógyldig konto')
             cursor.close()
             conn.close()
             return redirect(url_for('add_transaction'))
@@ -168,7 +168,7 @@ def add_transaction():
         cursor.close()
         conn.close()
 
-        flash('Færslu lagt afturat')
+        flash('Gerð framd')
         return redirect(url_for('dashboard'))
 
     cursor.close()
@@ -188,7 +188,7 @@ def gen_ptal():
         try:
             fodidato = datetime.strptime(fodidato_str, '%Y-%m-%d').date()
         except ValueError:
-            flash('Ógyldigur dato format')
+            flash('Ógyldigt dato format')
             return redirect(url_for('gen_ptal'))
 
         conn = get_db_connection()
@@ -233,7 +233,7 @@ def add_account():
         cursor.close()
         conn.close()
 
-        flash('Konto lagt afturat')
+        flash('Konta stovnað')
 
     return render_template('add_account.html')
 
@@ -269,7 +269,7 @@ def add_transfer():
             """, {'kontonr': kontonr_fra, 'ptal': ptal})
             owns_from_account = cursor.fetchone()
             if not owns_from_account:
-                flash('Frá konto hoyrir ikki til teg')
+                flash('Frá flytingar kunnu einans fremjast frá egnum kontum')
                 cursor.close()
                 conn.close()
                 return redirect(url_for('add_transfer'))
@@ -283,13 +283,13 @@ def add_transfer():
         saldo_til = cursor.fetchone()
 
         if not saldo_fra or not saldo_til:
-            flash('Ógyldugt konto')
+            flash('Ógyldug konto')
             cursor.close()
             conn.close()
             return redirect(url_for('add_transfer'))
 
         if saldo_fra[0] < upphaedd:
-            flash('Ikki nóg pengar')
+            flash('Ikki nóg nógvar pengar')
             cursor.close()
             conn.close()
             return redirect(url_for('add_transfer'))
@@ -357,7 +357,7 @@ def add_person():
         try:
             fodidato = datetime.strptime(fodidato_str, '%Y-%m-%d').date()
         except ValueError:
-            flash('Ogyldigur fodidagur')
+            flash('Ógyldigur føðingardagur')
             return redirect(url_for('add_person'))
 
         conn = get_db_connection()

@@ -82,7 +82,7 @@
     {% endif %}
     {% endwith %}
     <form method="POST">
-        <label for="kontonr_fra">{% if is_admin %}Frá konto{% else %}Frá Konto{% endif %}:</label>
+        <label for="kontonr_fra">Frá konto:</label>
         <select id="kontonr_fra" name="kontonr_fra" required>
             {% for acc in from_accounts %}
             <option value="{{ acc }}">{{ acc }}</option>
