@@ -162,7 +162,16 @@ begin
   if :new.bokingar_id is null then
     :new.bokingar_id := bokingar_id_seq.nextval;
   end if;
-  update konto set saldo = :new.upphaedd + saldo where kontonr = :new.kontonr;
+
+  -- support Faroese and English labels for withdrawal
+  if instr(upper(replace(:new.bokingar_slag, 'Ú', 'U')), 'WITHDRAW') > 0
+     or instr(upper(replace(:new.bokingar_slag, 'Ú', 'U')), 'TAK') > 0
+     or instr(upper(:new.bokingar_slag), 'UTTAK') > 0 then
+    update konto set saldo = saldo - :new.upphaedd where kontonr = :new.kontonr;
+  else
+    update konto set saldo = saldo + :new.upphaedd where kontonr = :new.kontonr;
+  end if;
+
   select saldo into :new.leypandi_saldo from konto where kontonr = :new.kontonr;
   select sysdate into :new.dato from dual;
 end;
