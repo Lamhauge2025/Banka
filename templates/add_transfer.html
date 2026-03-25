@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Add Transfer</title>
+    <title>Flyting</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -70,8 +70,8 @@
 </head>
 
 <body>
-    <h1>{% if is_admin %}Legg afturat flyting{% else %}Flyt Pengar{% endif %}</h1>
-    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+    <h1>{% if is_admin %}Flyt Pengar{% else %}Flyt Pengar{% endif %}</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur</a>
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     <ul style="color: red;">

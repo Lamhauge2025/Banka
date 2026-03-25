@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Add Transaction</title>
+    <title>Set inn / Tak út</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -70,8 +70,8 @@
 </head>
 
 <body>
-    <h1>Tak út/Set Inn</h1>
-    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+    <h1>Set Inn / Tak út</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur</a>
     <form method="POST">
         <label for="kontonr">Kontonummur:</label>
         <select id="kontonr" name="kontonr" required>
@@ -85,10 +85,10 @@
         <input type="number" step="0.01" id="upphaedd" name="upphaedd" required>
         <label for="slag">Slag:</label>
         <select id="slag" name="slag" required>
-            <option value="Deposit">Innlegg</option>
-            <option value="Withdrawal">Uttak</option>
+            <option value="Deposit">Set inn</option>
+            <option value="Withdrawal">Tak út</option>
         </select>
-        <button type="submit">Legg afturat</button>
+        <button type="submit">Góðkenn</button>
     </form>
 </body>
 

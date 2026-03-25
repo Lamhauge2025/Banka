@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Add Account</title>
+    <title>Stovna konto</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -74,8 +74,8 @@
 </head>
 
 <body>
-    <h1>Legg afturat konto</h1>
-    <a href="{{ url_for('dashboard') }}">Aftur til yvirlit</a>
+    <h1>Stovna konto</h1>
+    <a href="{{ url_for('dashboard') }}">Aftur</a>
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     <ul class="messages">
@@ -94,7 +94,7 @@
             <option value="Kredit">Kredit</option>
             <option value="Trota">Trota</option>
         </select>
-        <button type="submit">Legg afturat</button>
+        <button type="submit">Stovna konto</button>
     </form>
 </body>
 

@@ -210,7 +210,7 @@ def add_transaction():
         cursor.close()
         conn.close()
 
-        flash('Færslu lagt afturat')
+        flash('Gerð framd')
         return redirect(url_for('dashboard'))
 
     cursor.close()
@@ -230,7 +230,7 @@ def gen_ptal():
         try:
             fodidato = datetime.strptime(fodidato_str, '%Y-%m-%d').date()
         except ValueError:
-            flash('Ógyldigur dato format')
+            flash('Ógyldigt dato format')
             return redirect(url_for('gen_ptal'))
 
         conn = get_db_connection()
@@ -275,7 +275,7 @@ def add_account():
         cursor.close()
         conn.close()
 
-        flash('Konto lagt afturat')
+        flash('Konta stovnað')
 
     return render_template('add_account.html')
 
@@ -299,7 +299,7 @@ def add_transfer():
             kontonr_fra_num = int(kontonr_fra)
             kontonr_til_num = int(kontonr_til)
         except ValueError:
-            flash('Ógyldugt konto')
+            flash('Ógyldig konto')
             return redirect(url_for('add_transfer'))
 
         conn = get_db_connection()
@@ -337,7 +337,7 @@ def add_transfer():
             elif code == 20003:
                 flash('Kann ikki flyta til sama konto')
             elif code == 1403:
-                flash('Ógyldugt konto')
+                flash('Ógyldig konto')
             else:
                 flash(getattr(error, 'message', str(exc)))
             return redirect(url_for('add_transfer'))
@@ -345,7 +345,7 @@ def add_transfer():
             cursor.close()
             conn.close()
 
-        flash('Flyting liðug')
+        flash('Flyting framd')
         return redirect(url_for('dashboard'))
 
     # Get available accounts for dropdowns
@@ -388,7 +388,7 @@ def add_person():
         try:
             fodidato = datetime.strptime(fodidato_str, '%Y-%m-%d').date()
         except ValueError:
-            flash('Ogyldigur fodidagur')
+            flash('Ógyldugt føðidato')
             return redirect(url_for('add_person'))
 
         conn = get_db_connection()
@@ -481,7 +481,7 @@ def add_family_member():
                 {'familju_id': familju_id, 'ptal': member_ptal},
             )
             if cursor.fetchone():
-                flash('Persónur er longu í hesi familju')
+                flash('Persónur er longu í familjuni')
                 return redirect(url_for('add_family_member'))
 
             cursor.execute(
