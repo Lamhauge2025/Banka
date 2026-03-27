@@ -74,11 +74,11 @@
 <body>
     <h1>{% if is_admin %}Banka Yvirlit{% else %}Kontur{% endif %}</h1>
     <a href="{{ url_for('logout') }}">Útrita</a>
-    <a href="{{ url_for('add_transaction') }}">Set Inn / Tak út</a>
+    <a href="{{ url_for('add_transaction') }}">Set Inn / Tak Út</a>
     {% if is_admin %}
-    <a href="{{ url_for('add_account') }}">Stovna konto</a>
-    <a href="{{ url_for('add_person') }}">Legg persón afturat</a>
-    <a href="{{ url_for('add_family_member') }}">Legg afturat familjulim</a>
+    <a href="{{ url_for('add_account') }}">Stovna Konto</a>
+    <a href="{{ url_for('add_person') }}">Legg Persón Afturat</a>
+    <a href="{{ url_for('add_family_member') }}">Legg Familjulim Afturat</a>
     <a href="{{ url_for('kundar') }}">Kundar</a>
     {% endif %}
     <a href="{{ url_for('add_transfer') }}">Flyt Pengar</a>
